@@ -28,6 +28,11 @@ const MOCK_AGENTS: Agent[] = [
     lastHeartbeat: new Date().toISOString(),
     createdAt: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
+    pm2: [
+      { processName: 'customer-cron', status: 'online', pid: 14210, restartCount: 2, uptime: 86400 },
+      { processName: 'admin-cron', status: 'online', pid: 14211, restartCount: 0, uptime: 86400 },
+      { processName: 'partner-cron', status: 'stopped', pid: 0, restartCount: 5, uptime: 0 }
+    ],
   },
   {
     _id: 'a2',
@@ -41,6 +46,9 @@ const MOCK_AGENTS: Agent[] = [
     lastHeartbeat: new Date().toISOString(),
     createdAt: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
+    pm2: [
+      { processName: 'worker-cron', status: 'online', pid: 2154, restartCount: 1, uptime: 36000 }
+    ],
   },
   {
     _id: 'a3',
@@ -54,6 +62,10 @@ const MOCK_AGENTS: Agent[] = [
     lastHeartbeat: new Date(Date.now() - 45 * 1000).toISOString(), // recent heartbeat
     createdAt: new Date(Date.now() - 20 * 24 * 3600 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
+    pm2: [
+      { processName: 'customer-cron', status: 'online', pid: 8201, restartCount: 12, uptime: 4200 },
+      { processName: 'admin-cron', status: 'stopped', pid: 0, restartCount: 4, uptime: 0 }
+    ],
   },
   {
     _id: 'a4',
@@ -67,6 +79,9 @@ const MOCK_AGENTS: Agent[] = [
     lastHeartbeat: new Date(Date.now() - 12 * 60 * 1000).toISOString(), // > 5 mins ago
     createdAt: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
+    pm2: [
+      { processName: 'customer-cron', status: 'errored', pid: 0, restartCount: 45, uptime: 0 }
+    ],
   },
 ];
 

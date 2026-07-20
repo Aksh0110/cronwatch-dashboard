@@ -33,6 +33,16 @@ export const StatusChip: React.FC<StatusChipProps> = ({ value, size = 'small' })
       label = 'Offline';
       icon = <WifiOffIcon sx={{ fontSize: '0.875rem' }} />;
       break;
+    case 'STOPPED':
+      color = 'default';
+      label = 'Stopped';
+      icon = <WifiOffIcon sx={{ fontSize: '0.875rem' }} />;
+      break;
+    case 'ERRORED':
+      color = 'error';
+      label = 'Errored';
+      icon = <CancelIcon sx={{ fontSize: '0.875rem' }} />;
+      break;
 
     // Execution status
     case 'SUCCESS':

@@ -141,6 +141,24 @@ export const Servers: React.FC = () => {
                           {getRelativeTime(agent.lastHeartbeat)}
                         </Typography>
                       </Box>
+
+                      {agent.pm2 && agent.pm2.length > 0 && (
+                        <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
+                            Monitored PM2 Processes
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            {agent.pm2.map((proc) => (
+                              <Box key={proc.processName} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem', color: 'text.primary' }}>
+                                  {proc.processName}
+                                </Typography>
+                                <StatusChip value={proc.status} />
+                              </Box>
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
                     </Box>
                   </CardContent>
                 </Card>
