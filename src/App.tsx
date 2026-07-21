@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Servers from './pages/Servers';
 import Executions from './pages/Executions';
 import Alerts from './pages/Alerts';
+import Settings from './pages/Settings';
 
 // Initialize TanStack Query Client
 const queryClient = new QueryClient({
@@ -31,6 +32,8 @@ function App() {
         return <Executions />;
       case 'alerts':
         return <Alerts />;
+      case 'settings':
+        return <Settings />;
       default:
         return <Dashboard onNavigate={setCurrentPage} />;
     }

@@ -246,6 +246,20 @@ let MOCK_ALERTS: Alert[] = [
   },
 ];
 
+let MOCK_SETTINGS = {
+  alertEmails: 'admin@company.com, engineering@company.com',
+  emailEnabled: true,
+  jobFailedAlertsEnabled: true,
+  processDownAlertsEnabled: true,
+  heartbeatLostAlertsEnabled: true,
+  smtpHost: 'smtp.mailgun.org',
+  smtpPort: 587,
+  smtpUser: 'postmaster@yourdomain.com',
+  smtpPass: 'password',
+  smtpSecure: false,
+  smtpFrom: '"CronWatch Alerts" <noreply@cronwatch.company>',
+};
+
 // Service functions
 export const api = {
   getDashboard: async (): Promise<DashboardStats> => {
@@ -367,6 +381,43 @@ export const api = {
         return MOCK_ALERTS[alertIndex];
       }
       throw new Error('Alert not found in mock database.');
+    }
+  },
+
+  getSettings: async (): Promise<any> => {
+    try {
+      const res = await client.get('/settings');
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, falling back to mock settings', err);
+      isOfflineMode = true;
+      return MOCK_SETTINGS;
+    }
+  },
+
+  updateSettings: async (settings: any): Promise<any> => {
+    try {
+      const res = await client.post('/settings', settings);
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, falling back to mock settings update', err);
+      isOfflineMode = true;
+      MOCK_SETTINGS = { ...MOCK_SETTINGS, ...settings };
+      return MOCK_SETTINGS;
+    }
+  },
+
+  testSettings: async (payload: any): Promise<any> => {
+    try {
+      const res = await client.post('/settings/test', payload);
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, mock testing SMTP connection', err);
+      isOfflineMode = true;
+      return { message: 'Test email successfully sent' };
     }
   },
 };

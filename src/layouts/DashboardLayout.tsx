@@ -22,6 +22,7 @@ import DnsIcon from '@mui/icons-material/Dns';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { getOfflineModeStatus } from '../services/api';
 
 const DRAWER_WIDTH = 260;
@@ -50,6 +51,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     { text: 'Servers', id: 'servers', icon: <DnsIcon /> },
     { text: 'Executions', id: 'executions', icon: <ListAltIcon /> },
     { text: 'Alerts', id: 'alerts', icon: <NotificationsActiveIcon /> },
+    { text: 'Settings', id: 'settings', icon: <SettingsIcon /> },
   ];
 
   const drawerContent = (
