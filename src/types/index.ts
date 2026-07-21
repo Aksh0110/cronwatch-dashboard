@@ -1,3 +1,11 @@
+export interface PM2ProcessInfo {
+  processName: string;
+  status: string;
+  pid: number;
+  restartCount: number;
+  uptime: number;
+}
+
 export interface Agent {
   _id: string;
   serverId: string;
@@ -10,6 +18,8 @@ export interface Agent {
   lastHeartbeat: string;
   createdAt: string;
   updatedAt: string;
+  stats?: any;
+  pm2?: PM2ProcessInfo[];
 }
 
 export interface Execution {

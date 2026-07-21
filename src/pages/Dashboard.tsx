@@ -7,8 +7,10 @@ import ErrorOutlinedIcon from '@mui/icons-material/ErrorOutlined';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import HistoryIcon from '@mui/icons-material/History';
 
+import SettingsIcon from '@mui/icons-material/Settings';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useAlerts, useAcknowledgeAlert } from '../hooks/useAlerts';
+import { useAgents } from '../hooks/useAgents';
 import StatCard from '../components/StatCard';
 import PageHeader from '../components/PageHeader';
 import LoadingState from '../components/LoadingState';
@@ -21,6 +23,7 @@ interface DashboardPageProps {
 export const Dashboard: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   const { data: stats, isLoading: statsLoading, refetch } = useDashboardData();
   const { data: activeAlerts, isLoading: alertsLoading } = useAlerts({ acknowledged: false, limit: 5 });
+  const { data: agents, isLoading: agentsLoading } = useAgents();
   const acknowledgeAlertMutation = useAcknowledgeAlert();
 
   const handleAcknowledge = async (id: string) => {
@@ -32,7 +35,7 @@ export const Dashboard: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     }
   };
 
-  const isLoading = statsLoading || alertsLoading;
+  const isLoading = statsLoading || alertsLoading || agentsLoading;
 
   if (isLoading) {
     return (
@@ -53,6 +56,17 @@ export const Dashboard: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   const healthyJobs = stats?.healthyJobs ?? 0;
   const failedJobs = stats?.failedJobs ?? 0;
   const latestExecutions = stats?.latestExecutions ?? [];
+
+  // Flatten PM2 processes across all ONLINE agents
+  const pm2ProcessesList = (agents || [])
+    .filter((agent) => agent.status === 'ONLINE')
+    .flatMap((agent) =>
+      (agent.pm2 || []).map((proc) => ({
+        ...proc,
+        serverId: agent.serverId,
+        serverName: agent.serverName,
+      }))
+    );
 
   return (
     <Box>
@@ -168,9 +182,56 @@ export const Dashboard: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           </Card>
         </Grid>
 
-        {/* Active Alerts (Right column) */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <Card sx={{ height: '100%' }}>
+        {/* Right column: PM2 Processes & Active Alerts */}
+        <Grid size={{ xs: 12, lg: 4 }} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* PM2 Processes Status Card */}
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <SettingsIcon sx={{ color: 'primary.main' }} />
+                <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                  PM2 Processes
+                </Typography>
+              </Box>
+
+              {pm2ProcessesList.length === 0 ? (
+                <Typography variant="body2" sx={{ color: 'text.secondary', py: 4, textAlign: 'center' }}>
+                  No PM2 processes monitored.
+                </Typography>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  {pm2ProcessesList.map((proc, index) => (
+                    <Box
+                      key={`${proc.serverId}-${proc.processName}-${index}`}
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        p: 1.5,
+                        borderRadius: 1,
+                        bgcolor: 'background.default',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {proc.processName}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          {proc.serverName || proc.serverId}
+                        </Typography>
+                      </Box>
+                      <StatusChip value={proc.status} />
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Active Alerts Card */}
+          <Card>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

@@ -28,6 +28,11 @@ const MOCK_AGENTS: Agent[] = [
     lastHeartbeat: new Date().toISOString(),
     createdAt: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
+    pm2: [
+      { processName: 'customer-cron', status: 'online', pid: 14210, restartCount: 2, uptime: 86400 },
+      { processName: 'admin-cron', status: 'online', pid: 14211, restartCount: 0, uptime: 86400 },
+      { processName: 'partner-cron', status: 'stopped', pid: 0, restartCount: 5, uptime: 0 }
+    ],
   },
   {
     _id: 'a2',
@@ -41,6 +46,9 @@ const MOCK_AGENTS: Agent[] = [
     lastHeartbeat: new Date().toISOString(),
     createdAt: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
+    pm2: [
+      { processName: 'worker-cron', status: 'online', pid: 2154, restartCount: 1, uptime: 36000 }
+    ],
   },
   {
     _id: 'a3',
@@ -54,6 +62,10 @@ const MOCK_AGENTS: Agent[] = [
     lastHeartbeat: new Date(Date.now() - 45 * 1000).toISOString(), // recent heartbeat
     createdAt: new Date(Date.now() - 20 * 24 * 3600 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
+    pm2: [
+      { processName: 'customer-cron', status: 'online', pid: 8201, restartCount: 12, uptime: 4200 },
+      { processName: 'admin-cron', status: 'stopped', pid: 0, restartCount: 4, uptime: 0 }
+    ],
   },
   {
     _id: 'a4',
@@ -67,6 +79,9 @@ const MOCK_AGENTS: Agent[] = [
     lastHeartbeat: new Date(Date.now() - 12 * 60 * 1000).toISOString(), // > 5 mins ago
     createdAt: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
+    pm2: [
+      { processName: 'customer-cron', status: 'errored', pid: 0, restartCount: 45, uptime: 0 }
+    ],
   },
 ];
 
@@ -231,6 +246,20 @@ let MOCK_ALERTS: Alert[] = [
   },
 ];
 
+let MOCK_SETTINGS = {
+  alertEmails: 'admin@company.com, engineering@company.com',
+  emailEnabled: true,
+  jobFailedAlertsEnabled: true,
+  processDownAlertsEnabled: true,
+  heartbeatLostAlertsEnabled: true,
+  smtpHost: 'smtp.mailgun.org',
+  smtpPort: 587,
+  smtpUser: 'postmaster@yourdomain.com',
+  smtpPass: 'password',
+  smtpSecure: false,
+  smtpFrom: '"CronWatch Alerts" <noreply@cronwatch.company>',
+};
+
 // Service functions
 export const api = {
   getDashboard: async (): Promise<DashboardStats> => {
@@ -352,6 +381,43 @@ export const api = {
         return MOCK_ALERTS[alertIndex];
       }
       throw new Error('Alert not found in mock database.');
+    }
+  },
+
+  getSettings: async (): Promise<any> => {
+    try {
+      const res = await client.get('/settings');
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, falling back to mock settings', err);
+      isOfflineMode = true;
+      return MOCK_SETTINGS;
+    }
+  },
+
+  updateSettings: async (settings: any): Promise<any> => {
+    try {
+      const res = await client.post('/settings', settings);
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, falling back to mock settings update', err);
+      isOfflineMode = true;
+      MOCK_SETTINGS = { ...MOCK_SETTINGS, ...settings };
+      return MOCK_SETTINGS;
+    }
+  },
+
+  testSettings: async (payload: any): Promise<any> => {
+    try {
+      const res = await client.post('/settings/test', payload);
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, mock testing SMTP connection', err);
+      isOfflineMode = true;
+      return { message: 'Test email successfully sent' };
     }
   },
 };
