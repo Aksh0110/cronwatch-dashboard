@@ -11,6 +11,9 @@ export default defineConfig({
 
   preview: {
     host: '0.0.0.0',
-    port: 4173
+    port: 4173,
+    allowedHosts: [
+      'hoora-staging-alb-1663502217.ap-south-1.elb.amazonaws.com'
+    ]
   }
 })

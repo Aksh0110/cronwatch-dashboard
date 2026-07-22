@@ -346,7 +346,14 @@ export const api = {
           filtered = filtered.filter(e => e.jobName.toLowerCase().includes(params.jobName!.toLowerCase()));
         }
         if (params.status) {
-          filtered = filtered.filter(e => e.status.toUpperCase() === params.status!.toUpperCase());
+          const statusVal = params.status.toUpperCase();
+          if (statusVal === 'SUCCESS' || statusVal === 'COMPLETED') {
+            filtered = filtered.filter(e => e.status.toUpperCase() === 'SUCCESS' || e.status.toUpperCase() === 'COMPLETED');
+          } else if (statusVal === 'RUNNING' || statusVal === 'STARTED') {
+            filtered = filtered.filter(e => e.status.toUpperCase() === 'RUNNING' || e.status.toUpperCase() === 'STARTED');
+          } else {
+            filtered = filtered.filter(e => e.status.toUpperCase() === params.status!.toUpperCase());
+          }
         }
         
         const skip = params.skip || 0;
