@@ -37,12 +37,10 @@ export const Executions: React.FC = () => {
   // Fetch agents for dropdown
   const { data: agents } = useAgents();
   
-  // Fetch filtered executions
   const { data: executions, isLoading, refetch } = useExecutions({
     jobName: jobName || undefined,
     serverId: serverId || undefined,
     status: status || undefined,
-    limit: 100,
   });
 
   const handleResetFilters = () => {

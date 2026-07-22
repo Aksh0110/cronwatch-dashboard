@@ -357,8 +357,11 @@ export const api = {
         }
         
         const skip = params.skip || 0;
-        const limit = params.limit || 100;
-        filtered = filtered.slice(skip, skip + limit);
+        if (params.limit !== undefined && params.limit !== null) {
+          filtered = filtered.slice(skip, skip + params.limit);
+        } else if (skip > 0) {
+          filtered = filtered.slice(skip);
+        }
       }
       return filtered;
     }
