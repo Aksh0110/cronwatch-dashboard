@@ -9,6 +9,34 @@ const client = axios.create({
   timeout: 5000,
 });
 
+// Interceptor to inject the JWT token if present
+client.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('cronwatch_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor to handle 401 Unauthorized responses
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Clear credentials and force reload
+      localStorage.removeItem('cronwatch_token');
+      localStorage.removeItem('cronwatch_user');
+      window.location.reload();
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Flag to check if we are using mock fallback
 let isOfflineMode = false;
 
@@ -418,6 +446,48 @@ export const api = {
       console.warn('Backend offline, mock testing SMTP connection', err);
       isOfflineMode = true;
       return { message: 'Test email successfully sent' };
+    }
+  },
+
+  login: async (username: string, password: string): Promise<any> => {
+    try {
+      const res = await client.post('/auth/login', { username, password });
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, attempting mock login', err);
+      isOfflineMode = true;
+      if (username === 'admin' && password === 'admin123') {
+        return {
+          access_token: 'mock_jwt_token_for_demo_mode',
+          user: {
+            id: 'mock-user-id',
+            username: 'admin',
+            email: 'admin@company.com',
+            name: 'Administrator (Demo)',
+            role: 'admin',
+          }
+        };
+      }
+      throw new Error('Invalid credentials (Offline Mode expects admin / admin123)');
+    }
+  },
+
+  getMe: async (): Promise<any> => {
+    try {
+      const res = await client.get('/auth/me');
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, returning mock user profile', err);
+      isOfflineMode = true;
+      return {
+        id: 'mock-user-id',
+        username: 'admin',
+        email: 'admin@company.com',
+        name: 'Administrator (Demo)',
+        role: 'admin',
+      };
     }
   },
 };
