@@ -22,6 +22,10 @@ import type { Column } from '../components/DataTable';
 import StatusChip from '../components/StatusChip';
 
 export const Alerts: React.FC = () => {
+  const userStr = localStorage.getItem('cronwatch_user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const isReadOnly = user?.role === 'read';
+
   // Local filters
   const [severity, setSeverity] = useState('');
   const [acknowledged, setAcknowledged] = useState('false'); // Default to unacknowledged (false)
@@ -135,7 +139,7 @@ export const Alerts: React.FC = () => {
             size="small"
             startIcon={<CheckIcon />}
             onClick={() => handleAcknowledge(row._id)}
-            disabled={acknowledgeMutation.isPending}
+            disabled={acknowledgeMutation.isPending || isReadOnly}
             sx={{
               py: 0.5,
               px: 1.5,

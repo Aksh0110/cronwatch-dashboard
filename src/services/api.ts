@@ -436,6 +436,16 @@ export const api = {
   },
 
   acknowledgeAlert: async (id: string): Promise<Alert> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user && user.role === 'read') {
+      const error = new Error('You do not have permission to perform this action');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'You do not have permission to perform this action' }
+      };
+      throw error;
+    }
     try {
       const res = await client.patch<Alert>(`/alerts/${id}/acknowledge`);
       isOfflineMode = false;
@@ -468,6 +478,16 @@ export const api = {
   },
 
   updateSettings: async (settings: any): Promise<any> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user && user.role === 'read') {
+      const error = new Error('You do not have permission to perform this action');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'You do not have permission to perform this action' }
+      };
+      throw error;
+    }
     try {
       const res = await client.post('/settings', settings);
       isOfflineMode = false;
@@ -481,6 +501,16 @@ export const api = {
   },
 
   testSettings: async (payload: any): Promise<any> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user && user.role === 'read') {
+      const error = new Error('You do not have permission to perform this action');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'You do not have permission to perform this action' }
+      };
+      throw error;
+    }
     try {
       const res = await client.post('/settings/test', payload);
       isOfflineMode = false;
@@ -567,6 +597,16 @@ export const api = {
   },
 
   getUsers: async (): Promise<any[]> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user && user.role !== 'admin') {
+      const error = new Error('Access denied. Administrator privileges required.');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'Access denied. Administrator privileges required.' }
+      };
+      throw error;
+    }
     try {
       const res = await client.get('/users');
       isOfflineMode = false;
@@ -579,6 +619,16 @@ export const api = {
   },
 
   createUser: async (user: any): Promise<any> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const currentUser = userStr ? JSON.parse(userStr) : null;
+    if (currentUser && currentUser.role !== 'admin') {
+      const error = new Error('Access denied. Administrator privileges required.');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'Access denied. Administrator privileges required.' }
+      };
+      throw error;
+    }
     try {
       const res = await client.post('/users', user);
       isOfflineMode = false;
@@ -602,6 +652,16 @@ export const api = {
   },
 
   updateUser: async (id: string, user: any): Promise<any> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const currentUser = userStr ? JSON.parse(userStr) : null;
+    if (currentUser && currentUser.role !== 'admin') {
+      const error = new Error('Access denied. Administrator privileges required.');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'Access denied. Administrator privileges required.' }
+      };
+      throw error;
+    }
     try {
       const res = await client.patch(`/users/${id}`, user);
       isOfflineMode = false;
@@ -626,6 +686,16 @@ export const api = {
   },
 
   deleteUser: async (id: string): Promise<any> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const currentUser = userStr ? JSON.parse(userStr) : null;
+    if (currentUser && currentUser.role !== 'admin') {
+      const error = new Error('Access denied. Administrator privileges required.');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'Access denied. Administrator privileges required.' }
+      };
+      throw error;
+    }
     try {
       const res = await client.delete(`/users/${id}`);
       isOfflineMode = false;

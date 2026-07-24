@@ -30,6 +30,10 @@ import PageHeader from '../components/PageHeader';
 import api from '../services/api';
 
 export const Settings: React.FC = () => {
+  const userStr = localStorage.getItem('cronwatch_user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const isReadOnly = user?.role === 'read';
+
   // Settings Form State
   const [alertEmails, setAlertEmails] = useState('');
   const [emailEnabled, setEmailEnabled] = useState(true);
@@ -179,6 +183,21 @@ export const Settings: React.FC = () => {
         }
       />
 
+      {isReadOnly && (
+        <MuiAlert
+          severity="warning"
+          sx={{
+            mb: 4,
+            borderRadius: '8px',
+            border: '1px solid',
+            borderColor: 'warning.light',
+            fontWeight: 500,
+          }}
+        >
+          You are logged in with Read-Only permissions. You can view settings but cannot modify them.
+        </MuiAlert>
+      )}
+
       {isLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress />
@@ -209,6 +228,7 @@ export const Settings: React.FC = () => {
                           <Switch
                             checked={emailEnabled}
                             onChange={(e) => setEmailEnabled(e.target.checked)}
+                            disabled={isReadOnly}
                             color="primary"
                           />
                         }
@@ -227,7 +247,7 @@ export const Settings: React.FC = () => {
                         label="Alert Recipients (Emails)"
                         variant="outlined"
                         fullWidth
-                        disabled={!emailEnabled}
+                        disabled={!emailEnabled || isReadOnly}
                         placeholder="admin@company.com, engineering@company.com"
                         value={alertEmails}
                         onChange={(e) => setAlertEmails(e.target.value)}
@@ -245,7 +265,7 @@ export const Settings: React.FC = () => {
                           <Switch
                             checked={jobFailedAlertsEnabled}
                             onChange={(e) => setJobFailedAlertsEnabled(e.target.checked)}
-                            disabled={!emailEnabled}
+                            disabled={!emailEnabled || isReadOnly}
                             color="error"
                           />
                         }
@@ -264,7 +284,7 @@ export const Settings: React.FC = () => {
                           <Switch
                             checked={processDownAlertsEnabled}
                             onChange={(e) => setProcessDownAlertsEnabled(e.target.checked)}
-                            disabled={!emailEnabled}
+                            disabled={!emailEnabled || isReadOnly}
                             color="error"
                           />
                         }
@@ -283,7 +303,7 @@ export const Settings: React.FC = () => {
                           <Switch
                             checked={heartbeatLostAlertsEnabled}
                             onChange={(e) => setHeartbeatLostAlertsEnabled(e.target.checked)}
-                            disabled={!emailEnabled}
+                            disabled={!emailEnabled || isReadOnly}
                             color="error"
                           />
                         }
@@ -307,7 +327,7 @@ export const Settings: React.FC = () => {
                     variant="contained"
                     color="primary"
                     size="large"
-                    disabled={isSaving}
+                    disabled={isSaving || isReadOnly}
                     startIcon={isSaving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
                     sx={{ px: 4, py: 1.2, fontWeight: 700, borderRadius: '6px' }}
                   >
@@ -341,6 +361,7 @@ export const Settings: React.FC = () => {
                           placeholder="smtp.mailgun.org"
                           variant="outlined"
                           fullWidth
+                          disabled={isReadOnly}
                           value={smtpHost}
                           onChange={(e) => setSmtpHost(e.target.value)}
                         />
@@ -352,6 +373,7 @@ export const Settings: React.FC = () => {
                           placeholder="587"
                           variant="outlined"
                           fullWidth
+                          disabled={isReadOnly}
                           value={smtpPort}
                           onChange={(e) => setSmtpPort(Number(e.target.value))}
                         />
@@ -363,6 +385,7 @@ export const Settings: React.FC = () => {
                           placeholder="postmaster@yourdomain.com"
                           variant="outlined"
                           fullWidth
+                          disabled={isReadOnly}
                           value={smtpUser}
                           onChange={(e) => setSmtpUser(e.target.value)}
                         />
@@ -375,6 +398,7 @@ export const Settings: React.FC = () => {
                           placeholder="SMTP Relay Password"
                           variant="outlined"
                           fullWidth
+                          disabled={isReadOnly}
                           value={smtpPass}
                           onChange={(e) => setSmtpPass(e.target.value)}
                           slotProps={{
@@ -385,6 +409,7 @@ export const Settings: React.FC = () => {
                                     aria-label="toggle password visibility"
                                     onClick={() => setShowPassword(!showPassword)}
                                     edge="end"
+                                    disabled={isReadOnly}
                                   >
                                     {showPassword ? <VisibilityOff /> : <Visibility />}
                                   </IconButton>
@@ -401,6 +426,7 @@ export const Settings: React.FC = () => {
                           placeholder="&quot;CronWatch Alerts&quot; &lt;noreply@cronwatch.company&gt;"
                           variant="outlined"
                           fullWidth
+                          disabled={isReadOnly}
                           value={smtpFrom}
                           onChange={(e) => setSmtpFrom(e.target.value)}
                           helperText="The outgoing 'From' email address header"
@@ -413,6 +439,7 @@ export const Settings: React.FC = () => {
                             <Switch
                               checked={smtpSecure}
                               onChange={(e) => setSmtpSecure(e.target.checked)}
+                              disabled={isReadOnly}
                               color="primary"
                             />
                           }
@@ -447,6 +474,7 @@ export const Settings: React.FC = () => {
                           variant="outlined"
                           size="small"
                           fullWidth
+                          disabled={isReadOnly}
                           placeholder="recipient@company.com"
                           value={testRecipient}
                           onChange={(e) => setTestRecipient(e.target.value)}
@@ -456,7 +484,7 @@ export const Settings: React.FC = () => {
                           variant="outlined"
                           color="secondary"
                           onClick={handleTestEmail}
-                          disabled={isTesting}
+                          disabled={isTesting || isReadOnly}
                           startIcon={isTesting ? <CircularProgress size={18} color="inherit" /> : <SendIcon />}
                           sx={{ py: 1, px: 3, whiteSpace: 'nowrap', textTransform: 'none', fontWeight: 600 }}
                         >
