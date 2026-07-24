@@ -23,6 +23,7 @@ import ListAltIcon from '@mui/icons-material/ListAlt';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
 import SettingsIcon from '@mui/icons-material/Settings';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { getOfflineModeStatus } from '../services/api';
 
 const DRAWER_WIDTH = 260;
@@ -31,16 +32,21 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
   currentPage: string;
   setCurrentPage: (page: string) => void;
+  onLogout?: () => void;
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
   currentPage,
   setCurrentPage,
+  onLogout,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const userStr = localStorage.getItem('cronwatch_user');
+  const user = userStr ? JSON.parse(userStr) : null;
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -115,7 +121,67 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </ListItem>
           );
         })}
+        {onLogout && (
+          <ListItem disablePadding sx={{ mt: 1 }}>
+            <ListItemButton
+              onClick={onLogout}
+              sx={{
+                borderRadius: '6px',
+                color: 'error.main',
+                '&:hover': {
+                  bgcolor: 'error.light',
+                  color: 'error.dark',
+                },
+                '& .MuiListItemIcon-root': {
+                  color: 'inherit',
+                },
+                py: 1.2,
+                px: 2,
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}><LogoutIcon /></ListItemIcon>
+              <ListItemText
+                primary={
+                  <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                    Logout
+                  </Typography>
+                }
+              />
+            </ListItemButton>
+          </ListItem>
+        )}
       </List>
+      <Divider />
+      {user && (
+        <Box sx={{ px: 2.5, py: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              bgcolor: 'primary.light',
+              color: 'primary.contrastText',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              border: '2px solid',
+              borderColor: 'divider',
+            }}
+          >
+            {user.username.substring(0, 2).toUpperCase()}
+          </Box>
+          <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+            <Typography variant="body2" noWrap sx={{ fontWeight: 600, color: 'text.primary' }}>
+              {user.name || user.username}
+            </Typography>
+            <Typography variant="caption" noWrap sx={{ color: 'text.secondary', display: 'block' }}>
+              {user.email}
+            </Typography>
+          </Box>
+        </Box>
+      )}
       <Divider />
       <Box sx={{ p: 2, textAlign: 'center' }}>
         <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>

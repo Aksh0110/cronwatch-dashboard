@@ -8,6 +8,7 @@ import Servers from './pages/Servers';
 import Executions from './pages/Executions';
 import Alerts from './pages/Alerts';
 import Settings from './pages/Settings';
+import AuthPage from './pages/AuthPage';
 
 // Initialize TanStack Query Client
 const queryClient = new QueryClient({
@@ -21,6 +22,20 @@ const queryClient = new QueryClient({
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [token, setToken] = useState<string | null>(localStorage.getItem('cronwatch_token'));
+
+  const handleLoginSuccess = (newToken: string, user: any) => {
+    localStorage.setItem('cronwatch_token', newToken);
+    localStorage.setItem('cronwatch_user', JSON.stringify(user));
+    setToken(newToken);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('cronwatch_token');
+    localStorage.removeItem('cronwatch_user');
+    setToken(null);
+    setCurrentPage('dashboard');
+  };
 
   const renderPage = () => {
     switch (currentPage) {
@@ -43,9 +58,17 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <DashboardLayout currentPage={currentPage} setCurrentPage={setCurrentPage}>
-          {renderPage()}
-        </DashboardLayout>
+        {!token ? (
+          <AuthPage onLoginSuccess={handleLoginSuccess} />
+        ) : (
+          <DashboardLayout
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            onLogout={handleLogout}
+          >
+            {renderPage()}
+          </DashboardLayout>
+        )}
       </ThemeProvider>
     </QueryClientProvider>
   );
