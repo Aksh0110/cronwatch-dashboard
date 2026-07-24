@@ -24,6 +24,7 @@ import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
+import PeopleIcon from '@mui/icons-material/People';
 import { getOfflineModeStatus } from '../services/api';
 
 const DRAWER_WIDTH = 260;
@@ -59,6 +60,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     { text: 'Alerts', id: 'alerts', icon: <NotificationsActiveIcon /> },
     { text: 'Settings', id: 'settings', icon: <SettingsIcon /> },
   ];
+
+  if (user && user.role === 'admin') {
+    menuItems.push({ text: 'Users', id: 'users', icon: <PeopleIcon /> });
+  }
 
   const drawerContent = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

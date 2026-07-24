@@ -288,6 +288,39 @@ let MOCK_SETTINGS = {
   smtpFrom: '"CronWatch Alerts" <noreply@cronwatch.company>',
 };
 
+let MOCK_USERS: any[] = [
+  {
+    _id: 'mock-user-id',
+    username: 'admin',
+    email: 'admin@company.com',
+    name: 'Administrator (Demo)',
+    role: 'admin',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    _id: 'u2',
+    username: 'operator',
+    email: 'operator@company.com',
+    name: 'Backup Operator',
+    role: 'write',
+    isActive: true,
+    createdAt: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    _id: 'u3',
+    username: 'viewer',
+    email: 'viewer@company.com',
+    name: 'Guest Viewer',
+    role: 'read',
+    isActive: true,
+    createdAt: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+];
+
 // Service functions
 export const api = {
   getDashboard: async (): Promise<DashboardStats> => {
@@ -467,6 +500,24 @@ export const api = {
     } catch (err) {
       console.warn('Backend offline, attempting mock login', err);
       isOfflineMode = true;
+
+      const mockUser = MOCK_USERS.find(u => u.username === username.toLowerCase());
+      if (mockUser) {
+        if (!mockUser.isActive) {
+          throw new Error('User account is deactivated');
+        }
+        return {
+          access_token: `mock_jwt_token_for_${mockUser.username}`,
+          user: {
+            id: mockUser._id,
+            username: mockUser.username,
+            email: mockUser.email,
+            name: mockUser.name,
+            role: mockUser.role,
+          }
+        };
+      }
+
       if (username === 'admin' && password === 'admin123') {
         return {
           access_token: 'mock_jwt_token_for_demo_mode',
@@ -479,7 +530,7 @@ export const api = {
           }
         };
       }
-      throw new Error('Invalid credentials (Offline Mode expects admin / admin123)');
+      throw new Error('Invalid credentials');
     }
   },
 
@@ -491,6 +542,20 @@ export const api = {
     } catch (err) {
       console.warn('Backend offline, returning mock user profile', err);
       isOfflineMode = true;
+      const token = localStorage.getItem('cronwatch_token');
+      if (token && token.startsWith('mock_jwt_token_for_')) {
+        const username = token.replace('mock_jwt_token_for_', '');
+        const mockUser = MOCK_USERS.find(u => u.username === username);
+        if (mockUser) {
+          return {
+            id: mockUser._id,
+            username: mockUser.username,
+            email: mockUser.email,
+            name: mockUser.name,
+            role: mockUser.role,
+          };
+        }
+      }
       return {
         id: 'mock-user-id',
         username: 'admin',
@@ -498,6 +563,83 @@ export const api = {
         name: 'Administrator (Demo)',
         role: 'admin',
       };
+    }
+  },
+
+  getUsers: async (): Promise<any[]> => {
+    try {
+      const res = await client.get('/users');
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, returning mock users list', err);
+      isOfflineMode = true;
+      return MOCK_USERS;
+    }
+  },
+
+  createUser: async (user: any): Promise<any> => {
+    try {
+      const res = await client.post('/users', user);
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, creating mock user', err);
+      isOfflineMode = true;
+      const newUser = {
+        _id: `u${MOCK_USERS.length + 1}`,
+        username: user.username.toLowerCase(),
+        email: user.email.toLowerCase(),
+        name: user.name || '',
+        role: user.role || 'read',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      MOCK_USERS = [...MOCK_USERS, newUser];
+      return newUser;
+    }
+  },
+
+  updateUser: async (id: string, user: any): Promise<any> => {
+    try {
+      const res = await client.patch(`/users/${id}`, user);
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, updating mock user', err);
+      isOfflineMode = true;
+      const index = MOCK_USERS.findIndex(u => u._id === id);
+      if (index > -1) {
+        const updated = {
+          ...MOCK_USERS[index],
+          ...user,
+          username: user.username ? user.username.toLowerCase() : MOCK_USERS[index].username,
+          email: user.email ? user.email.toLowerCase() : MOCK_USERS[index].email,
+          updatedAt: new Date().toISOString(),
+        };
+        MOCK_USERS[index] = updated;
+        return updated;
+      }
+      throw new Error('User not found in mock database');
+    }
+  },
+
+  deleteUser: async (id: string): Promise<any> => {
+    try {
+      const res = await client.delete(`/users/${id}`);
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, deleting mock user', err);
+      isOfflineMode = true;
+      const index = MOCK_USERS.findIndex(u => u._id === id);
+      if (index > -1) {
+        const deleted = MOCK_USERS[index];
+        MOCK_USERS = MOCK_USERS.filter(u => u._id !== id);
+        return deleted;
+      }
+      throw new Error('User not found in mock database');
     }
   },
 };

@@ -78,3 +78,15 @@ export interface GetAlertsParams {
   limit?: number;
   skip?: number;
 }
+
+export interface User {
+  _id: string;
+  username: string;
+  email: string;
+  name?: string;
+  role: 'admin' | 'write' | 'read';
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
