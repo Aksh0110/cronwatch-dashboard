@@ -14,19 +14,25 @@ import {
   ListItemText,
   useMediaQuery,
   useTheme,
-  Alert,
+  Chip,
+  Avatar,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import DnsIcon from '@mui/icons-material/Dns';
-import ListAltIcon from '@mui/icons-material/ListAlt';
-import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
-import WifiOffIcon from '@mui/icons-material/WifiOff';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LogoutIcon from '@mui/icons-material/Logout';
-import { getOfflineModeStatus } from '../services/api';
+import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
+import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
+import DnsRoundedIcon from '@mui/icons-material/DnsRounded';
+import ListAltRoundedIcon from '@mui/icons-material/ListAltRounded';
+import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
+import WifiOffRoundedIcon from '@mui/icons-material/WifiOffRounded';
+import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
-const DRAWER_WIDTH = 260;
+import { getOfflineModeStatus } from '../services/api';
+import { useAlerts } from '../hooks/useAlerts';
+import { useAgents } from '../hooks/useAgents';
+
+const DRAWER_WIDTH = 250;
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -45,203 +51,274 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const { data: activeAlerts } = useAlerts({ acknowledged: false });
+  const { data: agents } = useAgents();
+  const onlineCount = (agents || []).filter((a) => a.status === 'ONLINE').length;
+
   const userStr = localStorage.getItem('cronwatch_user');
   const user = userStr ? JSON.parse(userStr) : null;
+  const isDemo = getOfflineModeStatus();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
+  const unacknowledgedCount = activeAlerts ? activeAlerts.length : 0;
+
   const menuItems = [
-    { text: 'Dashboard', id: 'dashboard', icon: <DashboardIcon /> },
-    { text: 'Servers', id: 'servers', icon: <DnsIcon /> },
-    { text: 'Executions', id: 'executions', icon: <ListAltIcon /> },
-    { text: 'Alerts', id: 'alerts', icon: <NotificationsActiveIcon /> },
-    { text: 'Settings', id: 'settings', icon: <SettingsIcon /> },
+    { text: 'Dashboard', id: 'dashboard', icon: <DashboardRoundedIcon fontSize="small" /> },
+    { text: 'Servers', id: 'servers', icon: <DnsRoundedIcon fontSize="small" /> },
+    { text: 'Executions', id: 'executions', icon: <ListAltRoundedIcon fontSize="small" /> },
+    {
+      text: 'Alerts',
+      id: 'alerts',
+      icon: <NotificationsActiveRoundedIcon fontSize="small" />,
+      badge: unacknowledgedCount > 0 ? unacknowledgedCount : undefined,
+    },
+    { text: 'Settings', id: 'settings', icon: <SettingsRoundedIcon fontSize="small" /> },
   ];
 
+  if (user && user.role === 'admin') {
+    menuItems.push({ text: 'Users', id: 'users', icon: <PeopleRoundedIcon fontSize="small" /> });
+  }
+
   const drawerContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Toolbar sx={{ px: 2.5, display: 'flex', gap: 1.5, alignItems: 'center' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#ffffff' }}>
+      {/* Brand Header */}
+      <Box sx={{ px: 2.5, py: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Box
           sx={{
-            width: 32,
-            height: 32,
-            borderRadius: '6px',
-            bgcolor: 'primary.main',
+            width: 36,
+            height: 36,
+            borderRadius: '10px',
+            bgcolor: '#0f172a',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'primary.contrastText',
+            color: '#ffffff',
             fontWeight: 800,
-            fontSize: '1rem',
+            fontSize: '1.1rem',
+            letterSpacing: '-0.02em',
+            boxShadow: '0 4px 10px rgba(15, 23, 42, 0.2)',
           }}
         >
           CW
         </Box>
-        <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em', color: 'primary.main' }}>
-          CronWatch
-        </Typography>
-      </Toolbar>
-      <Divider />
+        <Box>
+          <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a', lineHeight: 1.1 }}>
+            CronWatch
+          </Typography>
+          <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, fontSize: '0.7rem' }}>
+            Production Monitor
+          </Typography>
+        </Box>
+      </Box>
+
+      <Divider sx={{ borderColor: '#f1f5f9' }} />
+
+      {/* Navigation Links */}
       <List sx={{ px: 1.5, py: 2, flexGrow: 1 }}>
         {menuItems.map((item) => {
           const isActive = currentPage === item.id;
           return (
-            <ListItem key={item.id} disablePadding sx={{ mb: 0.5 }}>
+            <ListItem key={item.id} disablePadding sx={{ mb: 0.75 }}>
               <ListItemButton
                 onClick={() => {
                   setCurrentPage(item.id);
                   if (isMobile) setMobileOpen(false);
                 }}
                 sx={{
-                  borderRadius: '6px',
-                  bgcolor: isActive ? 'primary.light' : 'transparent',
-                  color: isActive ? 'primary.contrastText' : 'text.secondary',
+                  borderRadius: '8px',
+                  bgcolor: isActive ? '#eff6ff' : 'transparent',
+                  color: isActive ? '#1d4ed8' : '#475569',
+                  fontWeight: isActive ? 700 : 500,
+                  transition: 'all 0.15s ease',
                   '&:hover': {
-                    bgcolor: isActive ? 'primary.light' : 'action.hover',
-                    color: isActive ? 'primary.contrastText' : 'text.primary',
+                    bgcolor: isActive ? '#dbeafe' : '#f8fafc',
+                    color: isActive ? '#1d4ed8' : '#0f172a',
                   },
                   '& .MuiListItemIcon-root': {
-                    color: isActive ? 'primary.contrastText' : 'text.secondary',
+                    color: isActive ? '#2563eb' : '#64748b',
+                    minWidth: 36,
                   },
-                  py: 1.2,
-                  px: 2,
+                  py: 1.1,
+                  px: 1.5,
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText
                   primary={
-                    <Typography sx={{ fontSize: '0.875rem', fontWeight: isActive ? 600 : 500 }}>
+                    <Typography sx={{ fontSize: '0.875rem', fontWeight: isActive ? 700 : 500 }}>
                       {item.text}
                     </Typography>
                   }
                 />
+                {item.badge !== undefined && (
+                  <Chip
+                    label={item.badge}
+                    size="small"
+                    color="error"
+                    sx={{
+                      height: 20,
+                      minWidth: 20,
+                      fontSize: '0.7rem',
+                      fontWeight: 800,
+                      borderRadius: '10px',
+                      '& .MuiChip-label': { px: 0.75 },
+                    }}
+                  />
+                )}
               </ListItemButton>
             </ListItem>
           );
         })}
-        {onLogout && (
-          <ListItem disablePadding sx={{ mt: 1 }}>
-            <ListItemButton
-              onClick={onLogout}
+      </List>
+
+      <Divider sx={{ borderColor: '#f1f5f9' }} />
+
+      {/* User info & Logout */}
+      <Box sx={{ p: 2, bgcolor: '#f8fafc' }}>
+        {user && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 1.5 }}>
+            <Avatar
               sx={{
-                borderRadius: '6px',
-                color: 'error.main',
-                '&:hover': {
-                  bgcolor: 'error.light',
-                  color: 'error.dark',
-                },
-                '& .MuiListItemIcon-root': {
-                  color: 'inherit',
-                },
-                py: 1.2,
-                px: 2,
+                width: 34,
+                height: 34,
+                bgcolor: '#2563eb',
+                fontSize: '0.85rem',
+                fontWeight: 700,
               }}
             >
-              <ListItemIcon sx={{ minWidth: 40 }}><LogoutIcon /></ListItemIcon>
-              <ListItemText
-                primary={
-                  <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                    Logout
-                  </Typography>
-                }
+              {(user.username || 'U').substring(0, 2).toUpperCase()}
+            </Avatar>
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {user.name || user.username}
+              </Typography>
+              <Chip
+                label={(user.role || 'viewer').toUpperCase()}
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
+                  borderRadius: '4px',
+                  bgcolor: user.role === 'admin' ? '#dbeafe' : '#f1f5f9',
+                  color: user.role === 'admin' ? '#1e40af' : '#475569',
+                }}
               />
-            </ListItemButton>
-          </ListItem>
+            </Box>
+          </Box>
         )}
-      </List>
-      <Divider />
-      {user && (
-        <Box sx={{ px: 2.5, py: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box
+
+        {onLogout && (
+          <ListItemButton
+            onClick={onLogout}
             sx={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              bgcolor: 'primary.light',
-              color: 'primary.contrastText',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700,
-              fontSize: '0.9rem',
-              border: '2px solid',
-              borderColor: 'divider',
+              borderRadius: '6px',
+              color: '#ef4444',
+              py: 0.75,
+              px: 1.5,
+              '&:hover': {
+                bgcolor: '#fee2e2',
+                color: '#b91c1c',
+              },
             }}
           >
-            {user.username.substring(0, 2).toUpperCase()}
-          </Box>
-          <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-            <Typography variant="body2" noWrap sx={{ fontWeight: 600, color: 'text.primary' }}>
-              {user.name || user.username}
-            </Typography>
-            <Typography variant="caption" noWrap sx={{ color: 'text.secondary', display: 'block' }}>
-              {user.email}
-            </Typography>
-          </Box>
-        </Box>
-      )}
-      <Divider />
-      <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
-          CronWatch Dashboard v1.0.0
-        </Typography>
+            <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+              <LogoutRoundedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary={
+                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                  Log out
+                </Typography>
+              }
+            />
+          </ListItemButton>
+        )}
       </Box>
     </Box>
   );
 
-  const isDemo = getOfflineModeStatus();
+  const currentTitle = menuItems.find((m) => m.id === currentPage)?.text || 'Dashboard';
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f8fafc' }}>
+      {/* Top Application Bar */}
       <AppBar
         position="fixed"
         sx={{
           width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
           ml: { md: `${DRAWER_WIDTH}px` },
-          bgcolor: 'background.paper',
-          color: 'text.primary',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          bgcolor: '#ffffff',
+          color: '#0f172a',
+          borderBottom: '1px solid #e2e8f0',
           boxShadow: 'none',
+          height: 60,
+          justifyContent: 'center',
+          zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, sm: 3 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <IconButton
               color="inherit"
               aria-label="open drawer"
               edge="start"
               onClick={handleDrawerToggle}
-              sx={{ mr: 2, display: { md: 'none' } }}
+              sx={{ display: { md: 'none' }, color: '#0f172a' }}
             >
-              <MenuIcon />
+              <MenuRoundedIcon />
             </IconButton>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              {menuItems.find((item) => item.id === currentPage)?.text || 'CronWatch'}
+            <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+              {currentTitle}
             </Typography>
           </Box>
-          {isDemo && (
-            <Alert
-              severity="warning"
-              icon={<WifiOffIcon fontSize="small" />}
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Live Server Indicator */}
+            <Box
               sx={{
-                py: 0.25,
-                px: 1.5,
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                borderRadius: '6px',
-                border: '1px solid',
-                borderColor: 'warning.light',
+                display: { xs: 'none', sm: 'flex' },
+                alignItems: 'center',
+                gap: 0.75,
+                px: 1.25,
+                py: 0.5,
+                borderRadius: '20px',
+                bgcolor: '#ecfdf5',
+                border: '1px solid #a7f3d0',
               }}
             >
-              Offline (Demo Mode)
-            </Alert>
-          )}
+              <FiberManualRecordIcon sx={{ fontSize: '0.65rem', color: '#10b981' }} />
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#047857' }}>
+                {onlineCount} {onlineCount === 1 ? 'Server' : 'Servers'} Online
+              </Typography>
+            </Box>
+
+            {isDemo && (
+              <Chip
+                icon={<WifiOffRoundedIcon sx={{ fontSize: '0.85rem !important' }} />}
+                label="Offline Demo Mode"
+                size="small"
+                color="warning"
+                sx={{ fontWeight: 700, fontSize: '0.75rem' }}
+              />
+            )}
+          </Box>
         </Toolbar>
       </AppBar>
 
+      {/* Navigation Drawers */}
       <Box
         component="nav"
         sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
@@ -252,22 +329,29 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
+          ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, borderRight: '1px solid', borderColor: 'divider' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: DRAWER_WIDTH,
+              borderRight: '1px solid #e2e8f0',
+            },
           }}
         >
           {drawerContent}
         </Drawer>
+
         {/* Desktop drawer */}
         <Drawer
           variant="permanent"
           sx={{
             display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, borderRight: '1px solid', borderColor: 'divider' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: DRAWER_WIDTH,
+              borderRight: '1px solid #e2e8f0',
+            },
           }}
           open
         >
@@ -275,13 +359,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </Drawer>
       </Box>
 
+      {/* Main Content Area */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2.5, sm: 4 },
+          p: { xs: 2, sm: 3, md: 3.5 },
           width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          mt: '64px',
+          mt: '60px',
+          minWidth: 0,
         }}
       >
         {children}

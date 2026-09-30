@@ -22,3 +22,17 @@ export const useAcknowledgeAlert = () => {
     },
   });
 };
+
+export const useAcknowledgeAllAlerts = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (serverId?: string) => api.acknowledgeAllAlerts(serverId),
+    onSuccess: () => {
+      // Invalidate queries so tables refresh instantly
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+};
+

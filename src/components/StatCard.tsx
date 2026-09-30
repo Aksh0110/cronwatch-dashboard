@@ -11,7 +11,20 @@ interface StatCardProps {
 
 export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color = 'primary', description }) => {
   return (
-    <Card sx={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
+    <Card
+      sx={{
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: 2.5,
+        border: '1px solid #e2e8f0',
+        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.04)',
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        '&:hover': {
+          boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+        },
+      }}
+    >
       <Box 
         sx={{
           position: 'absolute',
@@ -22,22 +35,31 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color = 
           bgcolor: `${color}.main`,
         }} 
       />
-      <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+      <CardContent sx={{ p: { xs: 2, sm: 2.5 }, '&:last-child': { pb: { xs: 2, sm: 2.5 } } }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
             <Typography 
-              variant="body2" 
+              variant="caption" 
               sx={{ 
                 color: 'text.secondary', 
-                fontWeight: 600, 
+                fontWeight: 700, 
                 textTransform: 'uppercase', 
-                letterSpacing: '0.05em', 
-                mb: 1 
+                letterSpacing: '0.06em', 
+                display: 'block',
+                mb: 0.5,
               }}
             >
               {title}
             </Typography>
-            <Typography variant="h2" sx={{ color: 'text.primary', fontWeight: 800 }}>
+            <Typography
+              variant="h3"
+              sx={{
+                color: 'text.primary',
+                fontWeight: 800,
+                fontSize: { xs: '1.6rem', sm: '1.85rem' },
+                lineHeight: 1.2,
+              }}
+            >
               {value}
             </Typography>
           </Box>
@@ -45,16 +67,26 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color = 
             sx={{
               bgcolor: `${color}.light`,
               color: `${color}.dark`,
-              width: 44,
-              height: 44,
+              width: 42,
+              height: 42,
               borderRadius: 2,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
             }}
           >
             {icon}
           </Avatar>
         </Box>
         {description && (
-          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1.5 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.secondary',
+              display: 'block',
+              mt: 1.25,
+              fontWeight: 500,
+              fontSize: '0.75rem',
+            }}
+          >
             {description}
           </Typography>
         )}

@@ -9,6 +9,7 @@ import Executions from './pages/Executions';
 import Alerts from './pages/Alerts';
 import Settings from './pages/Settings';
 import AuthPage from './pages/AuthPage';
+import Users from './pages/Users';
 
 // Initialize TanStack Query Client
 const queryClient = new QueryClient({
@@ -49,6 +50,8 @@ function App() {
         return <Alerts />;
       case 'settings':
         return <Settings />;
+      case 'users':
+        return <Users />;
       default:
         return <Dashboard onNavigate={setCurrentPage} />;
     }

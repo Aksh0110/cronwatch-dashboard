@@ -6,7 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 5000,
+  timeout: 30000,
 });
 
 // Interceptor to inject the JWT token if present
@@ -27,11 +27,15 @@ client.interceptors.request.use(
 client.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Clear credentials and force reload
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    if (error.response && error.response.status === 401 && !isLoginRequest) {
+      // Clear credentials and force reload only for expired active sessions
+      const hadToken = localStorage.getItem('cronwatch_token');
       localStorage.removeItem('cronwatch_token');
       localStorage.removeItem('cronwatch_user');
-      window.location.reload();
+      if (hadToken) {
+        window.location.reload();
+      }
     }
     return Promise.reject(error);
   }
@@ -288,6 +292,39 @@ let MOCK_SETTINGS = {
   smtpFrom: '"CronWatch Alerts" <noreply@cronwatch.company>',
 };
 
+let MOCK_USERS: any[] = [
+  {
+    _id: 'mock-user-id',
+    username: 'admin',
+    email: 'admin@company.com',
+    name: 'Administrator (Demo)',
+    role: 'admin',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    _id: 'u2',
+    username: 'operator',
+    email: 'operator@company.com',
+    name: 'Backup Operator',
+    role: 'write',
+    isActive: true,
+    createdAt: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    _id: 'u3',
+    username: 'viewer',
+    email: 'viewer@company.com',
+    name: 'Guest Viewer',
+    role: 'read',
+    isActive: true,
+    createdAt: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+];
+
 // Service functions
 export const api = {
   getDashboard: async (): Promise<DashboardStats> => {
@@ -329,11 +366,15 @@ export const api = {
   },
 
   getExecutions: async (params?: GetExecutionsParams): Promise<Execution[]> => {
+    const finalParams = { limit: 100, ...params };
     try {
-      const res = await client.get<Execution[]>('/executions', { params });
+      const res = await client.get<Execution[]>('/executions', { params: finalParams });
       isOfflineMode = false;
       return res.data;
-    } catch (err) {
+    } catch (err: any) {
+      if (err.response) {
+        throw err;
+      }
       console.warn('Backend offline, falling back to mock data', err);
       isOfflineMode = true;
 
@@ -368,11 +409,15 @@ export const api = {
   },
 
   getAlerts: async (params?: GetAlertsParams): Promise<Alert[]> => {
+    const finalParams = { limit: 100, ...params };
     try {
-      const res = await client.get<Alert[]>('/alerts', { params });
+      const res = await client.get<Alert[]>('/alerts', { params: finalParams });
       isOfflineMode = false;
       return res.data;
-    } catch (err) {
+    } catch (err: any) {
+      if (err.response) {
+        throw err;
+      }
       console.warn('Backend offline, falling back to mock data', err);
       isOfflineMode = true;
 
@@ -403,6 +448,16 @@ export const api = {
   },
 
   acknowledgeAlert: async (id: string): Promise<Alert> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user && user.role === 'read') {
+      const error = new Error('You do not have permission to perform this action');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'You do not have permission to perform this action' }
+      };
+      throw error;
+    }
     try {
       const res = await client.patch<Alert>(`/alerts/${id}/acknowledge`);
       isOfflineMode = false;
@@ -422,6 +477,36 @@ export const api = {
     }
   },
 
+  acknowledgeAllAlerts: async (serverId?: string): Promise<{ modifiedCount: number }> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user && user.role === 'read') {
+      const error = new Error('You do not have permission to perform this action');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'You do not have permission to perform this action' },
+      };
+      throw error;
+    }
+    try {
+      const res = await client.patch<{ modifiedCount: number }>('/alerts/acknowledge-all', { serverId });
+      isOfflineMode = false;
+      return res.data;
+    } catch (err: any) {
+      if (err?.response?.status === 403) throw err;
+      console.warn('Backend offline, falling back to mock behavior', err);
+      isOfflineMode = true;
+      let count = 0;
+      MOCK_ALERTS.forEach((a, index) => {
+        if (!a.acknowledged && (!serverId || a.serverId === serverId)) {
+          MOCK_ALERTS[index] = { ...a, acknowledged: true };
+          count++;
+        }
+      });
+      return { modifiedCount: count };
+    }
+  },
+
   getSettings: async (): Promise<any> => {
     try {
       const res = await client.get('/settings');
@@ -435,6 +520,16 @@ export const api = {
   },
 
   updateSettings: async (settings: any): Promise<any> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user && user.role === 'read') {
+      const error = new Error('You do not have permission to perform this action');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'You do not have permission to perform this action' }
+      };
+      throw error;
+    }
     try {
       const res = await client.post('/settings', settings);
       isOfflineMode = false;
@@ -448,6 +543,16 @@ export const api = {
   },
 
   testSettings: async (payload: any): Promise<any> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user && user.role === 'read') {
+      const error = new Error('You do not have permission to perform this action');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'You do not have permission to perform this action' }
+      };
+      throw error;
+    }
     try {
       const res = await client.post('/settings/test', payload);
       isOfflineMode = false;
@@ -464,9 +569,31 @@ export const api = {
       const res = await client.post('/auth/login', { username, password });
       isOfflineMode = false;
       return res.data;
-    } catch (err) {
+    } catch (err: any) {
+      // If the backend actually responded (e.g. 401 Invalid credentials), propagate the error
+      if (err.response) {
+        throw err;
+      }
       console.warn('Backend offline, attempting mock login', err);
       isOfflineMode = true;
+
+      const mockUser = MOCK_USERS.find(u => u.username === username.toLowerCase());
+      if (mockUser) {
+        if (!mockUser.isActive) {
+          throw new Error('User account is deactivated');
+        }
+        return {
+          access_token: `mock_jwt_token_for_${mockUser.username}`,
+          user: {
+            id: mockUser._id,
+            username: mockUser.username,
+            email: mockUser.email,
+            name: mockUser.name,
+            role: mockUser.role,
+          }
+        };
+      }
+
       if (username === 'admin' && password === 'admin123') {
         return {
           access_token: 'mock_jwt_token_for_demo_mode',
@@ -479,7 +606,7 @@ export const api = {
           }
         };
       }
-      throw new Error('Invalid credentials (Offline Mode expects admin / admin123)');
+      throw new Error('Invalid credentials');
     }
   },
 
@@ -491,6 +618,20 @@ export const api = {
     } catch (err) {
       console.warn('Backend offline, returning mock user profile', err);
       isOfflineMode = true;
+      const token = localStorage.getItem('cronwatch_token');
+      if (token && token.startsWith('mock_jwt_token_for_')) {
+        const username = token.replace('mock_jwt_token_for_', '');
+        const mockUser = MOCK_USERS.find(u => u.username === username);
+        if (mockUser) {
+          return {
+            id: mockUser._id,
+            username: mockUser.username,
+            email: mockUser.email,
+            name: mockUser.name,
+            role: mockUser.role,
+          };
+        }
+      }
       return {
         id: 'mock-user-id',
         username: 'admin',
@@ -498,6 +639,123 @@ export const api = {
         name: 'Administrator (Demo)',
         role: 'admin',
       };
+    }
+  },
+
+  getUsers: async (): Promise<any[]> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user && user.role !== 'admin') {
+      const error = new Error('Access denied. Administrator privileges required.');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'Access denied. Administrator privileges required.' }
+      };
+      throw error;
+    }
+    try {
+      const res = await client.get('/users');
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, returning mock users list', err);
+      isOfflineMode = true;
+      return MOCK_USERS;
+    }
+  },
+
+  createUser: async (user: any): Promise<any> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const currentUser = userStr ? JSON.parse(userStr) : null;
+    if (currentUser && currentUser.role !== 'admin') {
+      const error = new Error('Access denied. Administrator privileges required.');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'Access denied. Administrator privileges required.' }
+      };
+      throw error;
+    }
+    try {
+      const res = await client.post('/users', user);
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, creating mock user', err);
+      isOfflineMode = true;
+      const newUser = {
+        _id: `u${MOCK_USERS.length + 1}`,
+        username: user.username.toLowerCase(),
+        email: user.email.toLowerCase(),
+        name: user.name || '',
+        role: user.role || 'read',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      MOCK_USERS = [...MOCK_USERS, newUser];
+      return newUser;
+    }
+  },
+
+  updateUser: async (id: string, user: any): Promise<any> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const currentUser = userStr ? JSON.parse(userStr) : null;
+    if (currentUser && currentUser.role !== 'admin') {
+      const error = new Error('Access denied. Administrator privileges required.');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'Access denied. Administrator privileges required.' }
+      };
+      throw error;
+    }
+    try {
+      const res = await client.patch(`/users/${id}`, user);
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, updating mock user', err);
+      isOfflineMode = true;
+      const index = MOCK_USERS.findIndex(u => u._id === id);
+      if (index > -1) {
+        const updated = {
+          ...MOCK_USERS[index],
+          ...user,
+          username: user.username ? user.username.toLowerCase() : MOCK_USERS[index].username,
+          email: user.email ? user.email.toLowerCase() : MOCK_USERS[index].email,
+          updatedAt: new Date().toISOString(),
+        };
+        MOCK_USERS[index] = updated;
+        return updated;
+      }
+      throw new Error('User not found in mock database');
+    }
+  },
+
+  deleteUser: async (id: string): Promise<any> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const currentUser = userStr ? JSON.parse(userStr) : null;
+    if (currentUser && currentUser.role !== 'admin') {
+      const error = new Error('Access denied. Administrator privileges required.');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'Access denied. Administrator privileges required.' }
+      };
+      throw error;
+    }
+    try {
+      const res = await client.delete(`/users/${id}`);
+      isOfflineMode = false;
+      return res.data;
+    } catch (err) {
+      console.warn('Backend offline, deleting mock user', err);
+      isOfflineMode = true;
+      const index = MOCK_USERS.findIndex(u => u._id === id);
+      if (index > -1) {
+        const deleted = MOCK_USERS[index];
+        MOCK_USERS = MOCK_USERS.filter(u => u._id !== id);
+        return deleted;
+      }
+      throw new Error('User not found in mock database');
     }
   },
 };
