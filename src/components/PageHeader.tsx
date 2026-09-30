@@ -9,30 +9,42 @@ interface PageHeaderProps {
 
 export const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, action }) => {
   return (
-    <Box sx={{ mb: 4 }}>
+    <Box sx={{ mb: 3 }}>
       <Box 
         sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
-          alignItems: 'center', 
+          alignItems: { xs: 'flex-start', sm: 'center' }, 
+          flexDirection: { xs: 'column', sm: 'row' },
           mb: 1.5, 
-          flexWrap: 'wrap', 
-          gap: 2 
+          gap: 1.5,
         }}
       >
         <Box>
-          <Typography variant="h3" component="h1" sx={{ color: 'text.primary', fontWeight: 700 }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              color: 'text.primary',
+              fontWeight: 800,
+              fontSize: { xs: '1.4rem', sm: '1.75rem' },
+              letterSpacing: '-0.02em',
+            }}
+          >
             {title}
           </Typography>
           {subtitle && (
-            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: 'text.secondary', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+            >
               {subtitle}
             </Typography>
           )}
         </Box>
-        {action && <Box>{action}</Box>}
+        {action && <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>{action}</Box>}
       </Box>
-      <Divider />
+      <Divider sx={{ borderColor: '#e2e8f0' }} />
     </Box>
   );
 };

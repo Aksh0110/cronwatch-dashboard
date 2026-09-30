@@ -333,8 +333,8 @@ export const Users: React.FC = () => {
               </Button>
             </Box>
           ) : (
-            <TableContainer sx={{ borderRadius: '8px', overflow: 'hidden' }}>
-              <Table>
+            <TableContainer sx={{ borderRadius: '8px', overflowX: 'auto', '&::-webkit-scrollbar': { height: '6px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#cbd5e1', borderRadius: '4px' } }}>
+              <Table sx={{ minWidth: 640 }}>
                 <TableHead sx={{ bgcolor: 'action.hover' }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 600, py: 1.8 }}>Name & Username</TableCell>

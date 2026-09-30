@@ -74,6 +74,7 @@ export interface GetAlertsParams {
   serverId?: string;
   jobName?: string;
   severity?: string;
+  type?: string;
   acknowledged?: boolean | string;
   limit?: number;
   skip?: number;

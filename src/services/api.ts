@@ -6,7 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 5000,
+  timeout: 30000,
 });
 
 // Interceptor to inject the JWT token if present
@@ -27,11 +27,15 @@ client.interceptors.request.use(
 client.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Clear credentials and force reload
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    if (error.response && error.response.status === 401 && !isLoginRequest) {
+      // Clear credentials and force reload only for expired active sessions
+      const hadToken = localStorage.getItem('cronwatch_token');
       localStorage.removeItem('cronwatch_token');
       localStorage.removeItem('cronwatch_user');
-      window.location.reload();
+      if (hadToken) {
+        window.location.reload();
+      }
     }
     return Promise.reject(error);
   }
@@ -362,11 +366,15 @@ export const api = {
   },
 
   getExecutions: async (params?: GetExecutionsParams): Promise<Execution[]> => {
+    const finalParams = { limit: 100, ...params };
     try {
-      const res = await client.get<Execution[]>('/executions', { params });
+      const res = await client.get<Execution[]>('/executions', { params: finalParams });
       isOfflineMode = false;
       return res.data;
-    } catch (err) {
+    } catch (err: any) {
+      if (err.response) {
+        throw err;
+      }
       console.warn('Backend offline, falling back to mock data', err);
       isOfflineMode = true;
 
@@ -401,11 +409,15 @@ export const api = {
   },
 
   getAlerts: async (params?: GetAlertsParams): Promise<Alert[]> => {
+    const finalParams = { limit: 100, ...params };
     try {
-      const res = await client.get<Alert[]>('/alerts', { params });
+      const res = await client.get<Alert[]>('/alerts', { params: finalParams });
       isOfflineMode = false;
       return res.data;
-    } catch (err) {
+    } catch (err: any) {
+      if (err.response) {
+        throw err;
+      }
       console.warn('Backend offline, falling back to mock data', err);
       isOfflineMode = true;
 
@@ -462,6 +474,36 @@ export const api = {
         return MOCK_ALERTS[alertIndex];
       }
       throw new Error('Alert not found in mock database.');
+    }
+  },
+
+  acknowledgeAllAlerts: async (serverId?: string): Promise<{ modifiedCount: number }> => {
+    const userStr = localStorage.getItem('cronwatch_user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user && user.role === 'read') {
+      const error = new Error('You do not have permission to perform this action');
+      (error as any).response = {
+        status: 403,
+        data: { message: 'You do not have permission to perform this action' },
+      };
+      throw error;
+    }
+    try {
+      const res = await client.patch<{ modifiedCount: number }>('/alerts/acknowledge-all', { serverId });
+      isOfflineMode = false;
+      return res.data;
+    } catch (err: any) {
+      if (err?.response?.status === 403) throw err;
+      console.warn('Backend offline, falling back to mock behavior', err);
+      isOfflineMode = true;
+      let count = 0;
+      MOCK_ALERTS.forEach((a, index) => {
+        if (!a.acknowledged && (!serverId || a.serverId === serverId)) {
+          MOCK_ALERTS[index] = { ...a, acknowledged: true };
+          count++;
+        }
+      });
+      return { modifiedCount: count };
     }
   },
 
@@ -527,7 +569,11 @@ export const api = {
       const res = await client.post('/auth/login', { username, password });
       isOfflineMode = false;
       return res.data;
-    } catch (err) {
+    } catch (err: any) {
+      // If the backend actually responded (e.g. 401 Invalid credentials), propagate the error
+      if (err.response) {
+        throw err;
+      }
       console.warn('Backend offline, attempting mock login', err);
       isOfflineMode = true;
 
